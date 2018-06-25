@@ -7,14 +7,16 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.Loader;
 import android.database.Cursor;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.ActionBarActivity;
+
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
 import android.text.Html;
+import android.text.Spanned;
 import android.text.format.DateUtils;
 import android.util.Log;
 import android.util.TypedValue;
@@ -41,7 +43,17 @@ import java.util.GregorianCalendar;
  */
 public class ArticleListActivity extends AppCompatActivity implements
         android.support.v4.app.LoaderManager.LoaderCallbacks<Cursor> {
-
+    public static final int FROM_HTML_MODE_COMPACT = 63;
+    public static final int FROM_HTML_MODE_LEGACY = 0;
+    public static final int FROM_HTML_OPTION_USE_CSS_COLORS = 256;
+    public static final int FROM_HTML_SEPARATOR_LINE_BREAK_BLOCKQUOTE = 32;
+    public static final int FROM_HTML_SEPARATOR_LINE_BREAK_DIV = 16;
+    public static final int FROM_HTML_SEPARATOR_LINE_BREAK_HEADING = 2;
+    public static final int FROM_HTML_SEPARATOR_LINE_BREAK_LIST = 8;
+    public static final int FROM_HTML_SEPARATOR_LINE_BREAK_LIST_ITEM = 4;
+    public static final int FROM_HTML_SEPARATOR_LINE_BREAK_PARAGRAPH = 1;
+    public static final int TO_HTML_PARAGRAPH_LINES_CONSECUTIVE = 0;
+    public static final int TO_HTML_PARAGRAPH_LINES_INDIVIDUAL = 1;
     private static final String TAG = ArticleListActivity.class.toString();
 
     private SwipeRefreshLayout mSwipeRefreshLayout;
@@ -169,15 +181,16 @@ public class ArticleListActivity extends AppCompatActivity implements
             Date publishedDate = parsePublishedDate();
             if (!publishedDate.before(START_OF_EPOCH.getTime())) {
 
-                holder.subtitleView.setText(Html.fromHtml(
+                holder.subtitleView.setText(fromHtml(
                         DateUtils.getRelativeTimeSpanString(
                                 publishedDate.getTime(),
                                 System.currentTimeMillis(), DateUtils.HOUR_IN_MILLIS,
                                 DateUtils.FORMAT_ABBREV_ALL).toString()
                                 + "<br/>" + " by "
-                                + mCursor.getString(ArticleLoader.Query.AUTHOR)));
+                                + mCursor.getString(ArticleLoader.Query.AUTHOR))
+                );
             } else {
-                holder.subtitleView.setText(Html.fromHtml(
+                holder.subtitleView.setText(fromHtml(
                         outputFormat.format(publishedDate)
                                 + "<br/>" + " by "
                                 + mCursor.getString(ArticleLoader.Query.AUTHOR)));
@@ -187,12 +200,6 @@ public class ArticleListActivity extends AppCompatActivity implements
                     mCursor.getString(ArticleLoader.Query.THUMB_URL),
                     ImageLoaderHelper.getInstance(ArticleListActivity.this).getImageLoader());
 
-//            String thumbnailUrl = mCursor.getString(ArticleLoader.Query.THUMB_URL);
-//            Picasso.with(holder.itemView.getContext())
-//                    .load(thumbnailUrl)
-//                    .error(R.drawable.ic_error)
-//                    .placeholder(R.drawable.ic_placeholder)
-//                    .into(holder.thumbnailView);
 
             holder.thumbnailView.setAspectRatio(mCursor.getFloat(ArticleLoader.Query.ASPECT_RATIO));
         }
@@ -213,6 +220,15 @@ public class ArticleListActivity extends AppCompatActivity implements
             thumbnailView = (DynamicHeightNetworkImageView) view.findViewById(R.id.thumbnail);
             titleView = (TextView) view.findViewById(R.id.article_title);
             subtitleView = (TextView) view.findViewById(R.id.article_subtitle);
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    public static Spanned fromHtml(String html){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            return Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY);
+        } else {
+            return Html.fromHtml(html);
         }
     }
 }
